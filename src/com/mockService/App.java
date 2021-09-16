@@ -50,19 +50,22 @@ public class App {
         comboBoxRequestType.addItem(new APIMethod(4,"DELETE"));
 
         comboBoxRequestCode.addItem(new APICode(0,200));
+        comboBoxRequestCode.addItem(new APICode(1,201));
 
         launchButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 int id;
                 String type;
-//                System.out.println("launch clicked");
-//                JOptionPane.showMessageDialog(null,"launch clicked");
+                int code;
+
                 APIMethod selectedItem = (APIMethod)comboBoxRequestType.getSelectedItem();
+                APICode selectedCode = (APICode) comboBoxRequestCode.getSelectedItem();
                 id = selectedItem.getId();
                 type = selectedItem.getType();
+                code = selectedCode.getCode();
 
-                sendRequestToMockService(id,type);
+                sendRequestToMockService(id,type,code);
 
 
 
@@ -74,15 +77,22 @@ public class App {
 
 
     //todo good examples https://stackoverflow.com/questions/309424/how-do-i-read-convert-an-inputstream-into-a-string-in-java
-    public void sendRequestToMockService(int id,String type){
+    public void sendRequestToMockService(int id,String type,int code){
         try {
             int responseCode;
             String responseMessage;
-//            URL url = new URL("https://hookb.in/YVDRzeROQ6hQERGGEJEY");
-            URL url = new URL("http://localhost:8081/getService2");
+            String endPoint = type+code;
+            System.out.println("type " + type + " code " + code);
+
+            URL url = new URL("http://localhost:8081/" + endPoint);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
-            connection.setRequestMethod(type);
+            if(type == "PATCH"){            // seems to be some problem with patch request.
+                connection.setRequestProperty("X-HTTP-Method-Override", "PATCH");
+                connection.setRequestMethod("POST");
+            }else{
+                connection.setRequestMethod(type);
+            }
             connection.setConnectTimeout(10000);
             responseCode = connection.getResponseCode();
             responseMessage = connection.getResponseMessage();
@@ -99,6 +109,8 @@ public class App {
                     stringBuilder.append(line);
                 }
                 System.out.println(stringBuilder);
+                // todo convert xml to params -> code, type, body and return to gui to display
+
 
             }else{                              // else, we read from errorStream
 
