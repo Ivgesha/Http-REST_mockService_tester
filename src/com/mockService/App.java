@@ -4,6 +4,11 @@ package com.mockService;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 
 public class App {
@@ -49,12 +54,15 @@ public class App {
         launchButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.out.println("launch clicked");
-                JOptionPane.showMessageDialog(null,"launch clicked");
+                int id;
+                String type;
+//                System.out.println("launch clicked");
+//                JOptionPane.showMessageDialog(null,"launch clicked");
                 APIMethod selectedItem = (APIMethod)comboBoxRequestType.getSelectedItem();
-                System.out.println(selectedItem.getId());
-                System.out.println(selectedItem.getType());
+                id = selectedItem.getId();
+                type = selectedItem.getType();
 
+                sendRequestToMockService(id,type);
 
 
 
@@ -64,6 +72,47 @@ public class App {
 
     }
 
+
+    //todo good examples https://stackoverflow.com/questions/309424/how-do-i-read-convert-an-inputstream-into-a-string-in-java
+    public void sendRequestToMockService(int id,String type){
+        try {
+            int responseCode;
+            String responseMessage;
+//            URL url = new URL("https://hookb.in/YVDRzeROQ6hQERGGEJEY");
+            URL url = new URL("http://localhost:8081/getService2");
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+            connection.setRequestMethod(type);
+            connection.setConnectTimeout(10000);
+            responseCode = connection.getResponseCode();
+            responseMessage = connection.getResponseMessage();
+            System.out.println(responseCode);
+            System.out.println(responseMessage);
+
+            if(responseCode < 400){             // if response code less than 400, read from inputStream
+                String line;
+                StringBuilder stringBuilder = new StringBuilder();
+                InputStream inputStream = connection.getInputStream();
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+                while((line = bufferedReader.readLine()) != null){
+                    System.out.println(line);
+                    stringBuilder.append(line);
+                }
+                System.out.println(stringBuilder);
+
+            }else{                              // else, we read from errorStream
+
+
+            }
+
+
+        }catch (Exception e){
+            System.out.println("Exception catch -> " + e.getMessage());
+        }
+
+
+
+    }
 
 
 }
