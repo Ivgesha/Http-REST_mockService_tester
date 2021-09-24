@@ -51,6 +51,7 @@ public class App {
 
         comboBoxRequestCode.addItem(new APICode(0,200));
         comboBoxRequestCode.addItem(new APICode(1,201));
+        comboBoxRequestCode.addItem(new APICode(2,500));
 
         launchButton.addActionListener(new ActionListener() {
             @Override
@@ -58,6 +59,7 @@ public class App {
                 int id;
                 String type;
                 int code;
+                StringBuilder xml = null;
 
                 APIMethod selectedItem = (APIMethod)comboBoxRequestType.getSelectedItem();
                 APICode selectedCode = (APICode) comboBoxRequestCode.getSelectedItem();
@@ -65,7 +67,13 @@ public class App {
                 type = selectedItem.getType();
                 code = selectedCode.getCode();
 
-                sendRequestToMockService(id,type,code);
+
+                // todo return XML as StringBUilder
+                xml = sendRequestToMockService(id,type,code);
+                System.out.println(xml);
+                // todo convert XML to map (to extract data)
+
+                // todo fill the inputs.
 
 
 
@@ -77,13 +85,17 @@ public class App {
 
 
     //todo good examples https://stackoverflow.com/questions/309424/how-do-i-read-convert-an-inputstream-into-a-string-in-java
-    public void sendRequestToMockService(int id,String type,int code){
-        try {
-            int responseCode;
-            String responseMessage;
-            String endPoint = type+code;
-            System.out.println("type " + type + " code " + code);
+    public StringBuilder sendRequestToMockService(int id,String type,int code){
+        int responseCode;
+        String responseMessage;
+        String endPoint = type+code;
+        String line;
+        StringBuilder stringBuilder = new StringBuilder();
+        InputStream inputStream = null;
+        BufferedReader bufferedReader = null;
+        System.out.println("type " + type + " code " + code);
 
+        try {
             URL url = new URL("http://localhost:8081/" + endPoint);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
@@ -99,11 +111,13 @@ public class App {
             System.out.println(responseCode);
             System.out.println(responseMessage);
 
-            if(responseCode < 400){             // if response code less than 400, read from inputStream
-                String line;
-                StringBuilder stringBuilder = new StringBuilder();
-                InputStream inputStream = connection.getInputStream();
-                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+
+            if(responseCode <= 400){             // if response code less than 400, read from inputStream
+                System.out.println("123");
+                //String line;
+                // StringBuilder stringBuilder = new StringBuilder();
+                inputStream = connection.getInputStream();
+                bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
                 while((line = bufferedReader.readLine()) != null){
                     System.out.println(line);
                     stringBuilder.append(line);
@@ -111,18 +125,21 @@ public class App {
                 System.out.println(stringBuilder);
                 // todo convert xml to params -> code, type, body and return to gui to display
 
-
             }else{                              // else, we read from errorStream
-
-
+                System.out.println("321");
+                inputStream = connection.getErrorStream();
+                bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+                while((line = bufferedReader.readLine()) != null ){
+                    System.out.println(line);
+                    stringBuilder.append(line);
+                }
+                System.out.println(stringBuilder);
             }
-
-
         }catch (Exception e){
             System.out.println("Exception catch -> " + e.getMessage());
         }
 
-
+        return stringBuilder;
 
     }
 
