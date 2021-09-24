@@ -23,6 +23,7 @@ import java.net.URL;
 
 public class App {
     private final int CONNECTIONTIMEOUT = 10000;
+
     private JPanel Container;
     private JPanel TitleLayout;
     private JPanel DataLayout;
@@ -30,13 +31,13 @@ public class App {
     private JComboBox comboBoxRequestType;
     private JComboBox comboBoxRequestCode;
     private JButton launchButton;
-    private JTextField textFieldResponseCodeLabel;
     private JTextField textFieldResponseTextLabel;
     private JLabel title;
     private JLabel requestTypeLabel;
     private JLabel requestCodeLabel;
     private JLabel ResponseCodeLabel;
     private JLabel ResponseTextLabel;
+    private JTextField textFieldResponseCode;
 
     public static void main(String[] args) {
         JFrame frame = new JFrame("App");       // defined the panel
@@ -69,7 +70,7 @@ public class App {
                 String type;
                 int code;
                 StringBuilder xml = null;
-                Map<String, String> xmlData;
+                Map<String, String> xmlData = null;
 
                 APIMethod selectedItem = (APIMethod) comboBoxRequestType.getSelectedItem();
                 APICode selectedCode = (APICode) comboBoxRequestCode.getSelectedItem();
@@ -82,8 +83,27 @@ public class App {
                 xml = sendRequestToMockService(id, type, code);
 //                System.out.println(xml);
                 // todo convert XML to map (to extract data)
-                xmlData = xmlParser(xml);
+                if(xml != null){
+                    xmlData = xmlParser(xml);
+
+                }else{
+                    xmlData.put("code", "500");
+                    xmlData.put("body","SoapUI Mock Service not running");
+                }
+
                 // todo fill the inputs.
+                fillData(xmlData);
+
+
+
+
+
+
+
+                System.out.println(xmlData.get("code"));
+                 System.out.println(xmlData.get("type"));
+                 System.out.println(xmlData.get("body"));
+
 
 
             }
@@ -122,29 +142,22 @@ public class App {
 
 
             if (responseCode <= 400) {             // if response code less than 400, read from inputStream
-                //   System.out.println("123");
-                //String line;
-                // StringBuilder stringBuilder = new StringBuilder();
                 inputStream = connection.getInputStream();
                 bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
                 while ((line = bufferedReader.readLine()) != null) {
-                    //     System.out.println(line);
-                    stringBuilder.append(line);
+                     stringBuilder.append(line);
                 }
-                //   System.out.println(stringBuilder);
-                // todo convert xml to params -> code, type, body and return to gui to display
+                 // todo convert xml to params -> code, type, body and return to gui to display
 
             } else {                              // else, we read from errorStream
-                //   System.out.println("321");
-                inputStream = connection.getErrorStream();
+                 inputStream = connection.getErrorStream();
                 bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
                 while ((line = bufferedReader.readLine()) != null) {
-                    //     System.out.println(line);
-                    stringBuilder.append(line);
+                     stringBuilder.append(line);
                 }
-                // System.out.println(stringBuilder);
-            }
+             }
         } catch (Exception e) {
+            stringBuilder = null;
             System.out.println("Exception catch -> " + e.getMessage());
         }
 
@@ -156,6 +169,7 @@ public class App {
         Map<String, String> map = new HashMap<String, String>();
         String xmlString = xml.toString();
         Document documentXml = convertStringToDocument(xmlString);
+        // todo if mock service not running, need to catch it some how, mayble add try and catch.
         Node user = documentXml.getFirstChild();
         NodeList childs = user.getChildNodes();
         Node child;
@@ -167,9 +181,10 @@ public class App {
 
         }
 
-        for (Map.Entry<String, String> entry : map.entrySet()) {
-            System.out.println(entry.getKey() + "/" + entry.getValue());
-        }
+//        for (Map.Entry<String, String> entry : map.entrySet()) {
+//            System.out.println(entry.getKey() + "/" + entry.getValue());
+//        }
+
         return map;
 
     }
@@ -180,15 +195,25 @@ public class App {
         DocumentBuilder builder;
         try {
             builder = factory.newDocumentBuilder();
-            factory.setValidating(true);
-            factory.setIgnoringElementContentWhitespace(true);
-            Document doc = builder.parse(new InputSource(new StringReader(
-                    xmlStr)));
+//            factory.setValidating(true);
+//            factory.setIgnoringElementContentWhitespace(true);
+            Document doc = builder.parse(new InputSource(new StringReader(xmlStr)));
             return doc;
         } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
+    }
+
+
+    public void fillData(Map<String,String> xmlData){
+         String code = xmlData.get("code");
+         String body = xmlData.get("body");
+         body = body.trim();
+
+         textFieldResponseCode.setText(code);
+         textFieldResponseTextLabel.setText(body);
+
     }
 
 }
